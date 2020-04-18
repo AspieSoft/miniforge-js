@@ -216,12 +216,12 @@ function runFile(file, optional){
 }
 
 
-function getRequiredFiles(file, options = {}){
+function getRequiredFiles(file, options = {}, dirName = ''){
     file = file.replace(/require\([\s\n]*?('\.{1,2}\/(?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}\/(?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, file){
         if(!file){return str;}
         file = file.toString().substring(1, file.length-1);
 
-        if(!file.startsWith(rootDirname)){file = path.join(rootDirname, file);}
+        if(!file.startsWith(rootDirname)){file = path.join(rootDirname, dirName, file);}
         else{file = path.resolve(file);}
         if(!file.startsWith(rootDirname)){return str;}
         if(!file.endsWith('.js')){file += '.js';}
@@ -233,11 +233,11 @@ function getRequiredFiles(file, options = {}){
         if(!fileData || fileData === ''){return str;}
 
         let exportsToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
-        fileData = getRequiredFiles(fileData, options);
+        fileData = getRequiredFiles(fileData, options, file);
         fileData = fileData.replace(/module[\s\n]*?\.[\s\n]*?exports[\s\n]*?([\w_$.\s\n]*)=/gs, '$_'+exportsToken+'_module_exports$1=');
         fileData = fileData.replace(/\/\*@min\*\/`(.*?)`/gs, function(str, code){return minifyFile(code, options.minify);});
         fileData = minifyFile(fileData, options.minify);
-        return `(function(){let $_${exportsToken}_module_exports=undefined;${fileData}return $${exportsToken}_module_exports;})();`;
+        return `(function(){let $_${exportsToken}_module_exports=undefined;${fileData}return $_${exportsToken}_module_exports;})();`;
     });
     return file;
 }
