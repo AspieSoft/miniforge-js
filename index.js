@@ -219,24 +219,32 @@ function runFile(file, optional){
 }
 
 
-function getRequiredFiles(file, options = {}, dirName = ''){
-    file = file.replace(/require\([\s\n]*?('\.{1,2}\/(?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}\/(?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, file){
+function getRequiredFiles(file, options = {}, dirname){
+    file = file.replace(/require\([\s\n]*?('\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, file){
         if(!file){return str;}
         file = file.toString().substring(1, file.length-1);
 
-        if(!file.startsWith(rootDirname)){file = path.join(rootDirname, dirName, file);}
+        let fallbackResult = str;
+        if(dirname){
+            let relDirname = dirname.replace(rootDirname, '');
+            if(relDirname.startsWith('/') || relDirname.startsWith('\\')){relDirname = relDirname.replace(/^[/\\]/, '');}
+            if(relDirname.endsWith('/') || relDirname.endsWith('\\')){relDirname = relDirname.replace(/[/\\]$/, '');}
+            fallbackResult = fallbackResult.replace(/(\.{1,2}[/\\])/, '$1'+relDirname+'/');
+        }
+
+        if(!file.startsWith(rootDirname)){file = path.join(dirname || rootDirname, file);}
         else{file = path.resolve(file);}
-        if(!file.startsWith(rootDirname)){return str;}
+        if(!file.startsWith(rootDirname)){return fallbackResult;}
         if(!file.endsWith('.js')){file += '.js';}
-        if(!fs.existsSync(file)){return str;}
+        if(!fs.existsSync(file)){return fallbackResult;}
         let fileData = undefined;
         try{
             fileData = fs.readFileSync(file).toString();
-        }catch(e){return str;}
-        if(!fileData || fileData === ''){return str;}
+        }catch(e){return fallbackResult;}
+        if(!fileData || fileData === ''){return fallbackResult;}
 
         let exportsToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
-        fileData = getRequiredFiles(fileData, options, file);
+        fileData = getRequiredFiles(fileData, options, path.join(file, '..'));
         fileData = fileData.replace(/module[\s\n]*?\.[\s\n]*?exports[\s\n]*?([\w_$.\s\n]*)=/gs, '$_'+exportsToken+'_module_exports$1=');
         fileData = fileData.replace(/\/\*@min\*\/`(.*?)`/gs, function(str, code){return minifyFile(code, options.minify);});
         fileData = minifyFile(fileData, options.minify);
