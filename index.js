@@ -120,6 +120,7 @@ function build(file, options = {}){
             fileDecrypt.push(`
             const crypto = requireModule('crypto', 'decrypt');
             const CryptoJS = requireModule('crypto-js', 'decrypt');
+            if(!crypto || !CryptoJS){module.exports = undefined; return;}
             `, `
             function strDecrypt(str, keys){
                 let key = crypto.createHmac('sha256', keys.secret).update(keys.key).digest('hex');
@@ -145,6 +146,7 @@ function build(file, options = {}){
         if(opts.compress){
             fileDecompress.push(`
             const LZUTF8 = requireModule('lzutf8', 'decompress');
+            if(!LZUTF8){module.exports = undefined; return;}
             `, `
             function strDecompress(str){
                 if(!str){return undefined;}
@@ -165,6 +167,7 @@ function build(file, options = {}){
             ${fileDecrypt[0]}
             ${fileDecompress[0]}
             const requireFromString = requireModule('require-from-string', 'run');
+            if(!requireFromString){module.exports = undefined; return;}
             function requireOr(files){let result = undefined;for(let i = 0; i < files.length; i++){try{result = require(files[i]);break;}catch(e){}}return result;}
             function requireModule(file, action){try{return require(file);}catch(e){console.error(__dirname, 'requires the', file, 'module to be installed so it can', action, 'itself');}}
             let fileData = '${fileData.replace(/(?!\\)'/g, '\\\'')}';
