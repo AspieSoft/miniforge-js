@@ -9,13 +9,7 @@ const CryptoJS = require('crypto-js');
 
 const requireFromString = require('require-from-string');
 
-const safeRegex = require('safe-regex');
-
 let rootDirname = undefined;
-
-function randomToken(size = 16){
-    return crypto.randomBytes(size).toString('hex');
-}
 
 const minifyOptions = {ecma: 2020, parse: {ecma: 2020}, compress: {ecma: 2020, keep_infinity: true, module: true, passes: 5, top_retain: ['module', 'global', 'return', 'process'], typeofs: false}, mangle: {keep_classnames: true, module: true, reserved: ['module', 'global', 'return', 'process']}, module: true, keep_classnames: true};
 function minifyFile(file, options = {}){
