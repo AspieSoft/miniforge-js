@@ -78,6 +78,8 @@ miniforge.build('./app.js', {
     compress: true,
     standAlone: true,
     minify: {},
+    outputNameMin: false, /* will write output to "filename.min.js" instead of "filename.build.js" (will also use min.keys instead of build.keys) */
+    output: undefined, /* (type: string) optional path to an output file to use instead of the default path */
 });
 ```
 
