@@ -25,10 +25,15 @@ This module Never uses eval.
 Instead, the file is pushed into the nodejs module object, as a way to run the file as a string after decompression.
 This is generating a virtual file, so no file writes are needed at runtime.
 
+This module runs a minified file, minified using miniforge-js. (self minified)
+
 ## Installation
 
 ```shell script
 npm install miniforge-js
+
+# or install as a dev dependency
+npm install miniforge-js -D
 ```
 
 ## Setup
