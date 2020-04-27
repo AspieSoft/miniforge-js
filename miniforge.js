@@ -4,7 +4,6 @@ const {minify} = require('terser');
 const LZUTF8 = require('lzutf8');
 const crypto = require('crypto');
 const CryptoJS = require('crypto-js');
-
 const requireFromString = require('require-from-string');
 
 let rootDirname = undefined;
