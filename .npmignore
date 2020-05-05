@@ -1,4 +1,3 @@
 .github
 src/*.js
-
-!src/*.min.js
+!src/index.min.js

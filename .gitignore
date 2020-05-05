@@ -3,4 +3,3 @@ node_modules/
 test/
 app.js
 build.js
-.gitignore
