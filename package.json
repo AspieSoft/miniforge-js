@@ -1,6 +1,6 @@
 {
   "name": "miniforge-js",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Minify and Forge your node.js files for production.",
   "license": "MIT",
   "author": "AspieSoft",

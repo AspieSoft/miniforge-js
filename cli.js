@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-// Grab provided args
 const [,,...args] = process.argv;
 
 const miniforge = require('./src/index.min');

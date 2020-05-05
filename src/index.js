@@ -101,7 +101,7 @@ function build(file, options = {}){
 	let opts = {...defaultBuildOptions};
 	Object.assign(opts, options);
 
-	fileData = getRequiredFiles(fileData, opts);
+	fileData = getRequiredFiles(fileData, opts, path.join(file, '..'), true).result;
 	fileData = fileData.replace(/\/\*@min\*\/`(.*?)`/gs, function(str, code){return '`'+minifyFile(code, opts.minify)+'`';});
 	fileData = minifyFile(fileData, opts.minify);
 
@@ -240,9 +240,11 @@ function runFile(file, optional){
 }
 
 
-function getRequiredFiles(file, options = {}, dirname){
+function getRequiredFiles(file, options = {}, dirname, isRoot = false, functionFiles = {}){
 	if(!options.root || typeof options.root !== 'string'){options.root = rootDirname;}
-	file = file.replace(/require\([\s\n]*?('\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, file){
+	if(typeof functionFiles !== 'object'){functionFiles = {};}
+
+	file = file.replace(/(?:([\w_$.\[\]]+)[\s\n]*?=[\s\n]*?|)require\([\s\n]*?('\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, varName, file){
 		if(!file){return str;}
 		file = file.toString().substring(1, file.length-1);
 
@@ -256,23 +258,60 @@ function getRequiredFiles(file, options = {}, dirname){
 
 		if(!file.startsWith(options.root)){file = path.join(dirname || options.root, file);}
 		else{file = path.resolve(file);}
+
 		if(!file.startsWith(options.root)){return fallbackResult;}
 		if(!file.endsWith('.js')){file += '.js';}
 		if(!fs.existsSync(file)){return fallbackResult;}
+
+		if(functionFiles[file]){
+			if(varName && !functionFiles[file].varName){
+				const newVarNameToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
+				functionFiles[file].varName = `$_${newVarNameToken}_required_module`;
+			}
+			if(varName){return varName+'='+functionFiles[file].varName;}
+			return '';
+		}
+
 		let fileData = undefined;
 		try{
 			fileData = fs.readFileSync(file).toString();
 		}catch(e){return fallbackResult;}
 		if(!fileData || fileData === ''){return fallbackResult;}
 
-		let exportsToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
-		fileData = getRequiredFiles(fileData, options, path.join(file, '..'));
+		fileData = getRequiredFiles(fileData, options, path.join(file, '..'), false, functionFiles);
+		Object.apply(functionFiles, fileData.functionFiles);
+		fileData = fileData.result;
+
+		const exportsToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
+
 		fileData = fileData.replace(/module[\s\n]*?\.[\s\n]*?exports[\s\n]*?([\w_$.\s\n]*)=/gs, '$_'+exportsToken+'_module_exports$1=');
 		fileData = fileData.replace(/\/\*@min\*\/`(.*?)`/gs, function(str, code){return minifyFile(code, options.minify);});
 		fileData = minifyFile(fileData, options.minify);
-		return `(function(){let $_${exportsToken}_module_exports=undefined;${fileData}return $_${exportsToken}_module_exports;})();`;
+
+		let result = `(function(){let $_${exportsToken}_module_exports=undefined;${fileData}return $_${exportsToken}_module_exports;})();`;
+		let newVarName = undefined;
+		if(varName){
+			const newVarNameToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
+			newVarName = `$_${newVarNameToken}_required_module`;
+		}
+
+		functionFiles[file] = {varName: newVarName, result};
+
+		if(varName){return varName+'='+newVarName;}
+		return '';
 	});
-	return file;
+
+	if(isRoot){
+		const functionFileNames = Object.keys(functionFiles);
+		let resultFunctions = [];
+		for(let i = 0; i < functionFileNames.length; i++){
+			let func = functionFiles[functionFileNames[i]];
+			if(func.varName){resultFunctions.push('const '+func.varName+'='+func.result);}
+			else{resultFunctions.push(';'+func.result);}
+		}file = resultFunctions.join('\n')+file;
+	}
+
+	return {result: file, functionFiles};
 }
 
 

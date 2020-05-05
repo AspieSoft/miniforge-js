@@ -30,6 +30,7 @@ This module runs a minified version of itself, minified using miniforge-js. (sel
 ### Whats New
 
  - Added CLI Commands
+ - Duplicate Forged Files are filtered and added to the top level
 
 ## Installation
 
