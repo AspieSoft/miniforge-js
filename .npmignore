@@ -1,2 +1,4 @@
-/src/*.js
-!/src/*.min.js
+.github
+src/*.js
+
+!src/*.min.js
