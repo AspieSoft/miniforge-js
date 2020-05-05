@@ -78,11 +78,22 @@ function getKeyPair(key){
 
 const defaultBuildOptions = {compress: true, standAlone: true};
 function build(file, options = {}){
-	if(!rootDirname){console.error('rootDir not defined'); return;}
+	if(!options.root || typeof options.root !== 'string'){options.root = undefined;}
+	if(options.root){
+		options.root = path.resolve(options.root.toString()) || undefined;
+	}else if(rootDirname && typeof rootDirname === 'string'){
+		options.root = path.resolve(rootDirname.toString());
+	}else if(file && typeof file === 'string'){
+		let filePath = file.toString();
+		if(!filePath.startsWith(module.parent.filename) && !filePath.startsWith(__dirname) && !filePath.startsWith('C:/') && !filePath.includes(':/')){
+			filePath = path.join(module.parent.filename.toString(), '..', filePath);
+		}options.root = path.join(filePath, '..');
+	}
+	if(!options.root){console.error('rootDir not defined'); return;}
 	file = file.toString();
-	if(!file.startsWith(rootDirname)){file = path.join(rootDirname, file);}
+	if(!file.startsWith(options.root)){file = path.join(options.root, file);}
 	else{file = path.resolve(file);}
-	if(!file.startsWith(rootDirname)){console.error(file, 'is outside the rootDir'); return;}
+	if(!file.startsWith(options.root)){console.error(file, 'is outside the rootDir'); return;}
 	if(!file.endsWith('.js')){file += '.js';}
 	if(!fs.existsSync(file)){console.error(file, 'does not exist'); return;}
 	let fileData = fs.readFileSync(file).toString();
@@ -183,9 +194,9 @@ function build(file, options = {}){
 
 	if(opts.output){
 		fileOutput = opts.output.toString();
-		if(!fileOutput.startsWith(rootDirname)){fileOutput = path.join(rootDirname, fileOutput);}
+		if(!fileOutput.startsWith(options.root)){fileOutput = path.join(options.root, fileOutput);}
 		else{fileOutput = path.resolve(fileOutput);}
-		if(!fileOutput.startsWith(rootDirname)){console.error(fileOutput, 'is outside the rootDir'); return;}
+		if(!fileOutput.startsWith(options.root)){console.error(fileOutput, 'is outside the rootDir'); return;}
 		if(!fileOutput.endsWith('.js')){fileOutput += '.js';}
 	}else{
 		let outType = 'build';
@@ -230,21 +241,22 @@ function runFile(file, optional){
 
 
 function getRequiredFiles(file, options = {}, dirname){
+	if(!options.root || typeof options.root !== 'string'){options.root = rootDirname;}
 	file = file.replace(/require\([\s\n]*?('\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, file){
 		if(!file){return str;}
 		file = file.toString().substring(1, file.length-1);
 
 		let fallbackResult = str;
 		if(dirname){
-			let relDirname = dirname.replace(rootDirname, '');
+			let relDirname = dirname.replace(options.root, '');
 			if(relDirname.startsWith('/') || relDirname.startsWith('\\')){relDirname = relDirname.replace(/^[/\\]/, '');}
 			if(relDirname.endsWith('/') || relDirname.endsWith('\\')){relDirname = relDirname.replace(/[/\\]$/, '');}
 			fallbackResult = fallbackResult.replace(/(\.{1,2}[/\\])/, '$1'+relDirname+'/');
 		}
 
-		if(!file.startsWith(rootDirname)){file = path.join(dirname || rootDirname, file);}
+		if(!file.startsWith(options.root)){file = path.join(dirname || options.root, file);}
 		else{file = path.resolve(file);}
-		if(!file.startsWith(rootDirname)){return fallbackResult;}
+		if(!file.startsWith(options.root)){return fallbackResult;}
 		if(!file.endsWith('.js')){file += '.js';}
 		if(!fs.existsSync(file)){return fallbackResult;}
 		let fileData = undefined;

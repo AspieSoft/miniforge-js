@@ -1,6 +1,6 @@
 {
   "name": "miniforge-js",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Minify and Forge your node.js files for production.",
   "license": "MIT",
   "author": "AspieSoft",
@@ -9,6 +9,9 @@
     "url": "git://github.com/aspiesoft/miniforge-js.git"
   },
   "main": "index.js",
+  "bin": {
+    "miniforge-js": "./cli.js"
+  },
   "keywords": [
     "nodejs",
     "miniforge-js",
@@ -31,6 +34,11 @@
     "safe-regex": "^2.1.1"
   },
   "nodemonConfig": {
-    "ignore": ["*.build.js", "*.build.keys", "*.min.js", "*.min.keys"]
+    "ignore": [
+      "*.build.js",
+      "*.build.keys",
+      "*.min.js",
+      "*.min.keys"
+    ]
   }
 }

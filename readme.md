@@ -27,6 +27,10 @@ This is generating a virtual file, so no file writes are needed at runtime.
 
 This module runs a minified version of itself, minified using miniforge-js. (self minified)
 
+### Whats New
+
+ - Added CLI Commands
+
 ## Installation
 
 ```shell script
@@ -85,13 +89,24 @@ miniforge.build('./app.js', {
     minify: {},
     outputNameMin: false, /* will write output to "filename.min.js" instead of "filename.build.js" (will also use min.keys instead of build.keys) */
     output: undefined, /* (type: string) optional path to an output file to use instead of the default path */
+    root: undefined, /* (type: string) set the root dir for build (can replace miniforge.rootDir(__dirname); for build, but its still required for miniforge('./app.js'); function to run) */
 });
+```
+
+## CLI
+
+You can use cli scripts as shown
+
+```shell script
+#for a list of commands
+miniforge-js -h
 ```
 
 **Note: if encrypt or compress are used, and standAlone is false, you will need to use miniforge('./app.js'); method to require the file.**
 
 Even if standAlone:
  - If compress is used, lzutf8 module is required.
- - If encrypt is used, crypto-js module is required
+ - If encrypt is used, crypto-js module is required.
+ - If either are used, require-from-string module is required.
 
 If standAlone, the file will warn the user what modules are needed to run it, if not installed when the file is required.
