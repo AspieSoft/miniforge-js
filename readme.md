@@ -7,7 +7,6 @@
 
 ![npm](https://img.shields.io/npm/dw/miniforge-js)
 ![npm](https://img.shields.io/npm/dm/miniforge-js)
-![GitHub last commit](https://img.shields.io/github/last-commit/aspiesoft/miniforge-js)
 
 [![paypal](https://img.shields.io/badge/buy%20me%20a%20coffee-paypal-blue)](https://buymeacoffee.aspiesoft.com/)
 
@@ -27,7 +26,7 @@ This is generating a virtual file, so no file writes are needed at runtime.
 
 This module runs a minified version of itself, minified using miniforge-js. (self minified)
 
-### Whats New
+### What's New
 
  - Added CLI Commands
  - Duplicate Forged Files are filtered and added to the top level
@@ -35,17 +34,18 @@ This module runs a minified version of itself, minified using miniforge-js. (sel
 ## Installation
 
 ```shell script
-npm install miniforge-js
+npm install @aspiesoft/miniforge-js
 
 # or install as a dev dependency
-npm install miniforge-js -D
+npm install @aspiesoft/miniforge-js -D
 ```
 
 ## Setup
 
 ```js
-const miniforge = require('miniforge-js');
+const miniforge = require('@aspiesoft/miniforge-js');
 
+// optional
 miniforge.rootDir(__dirname);
 ```
 
