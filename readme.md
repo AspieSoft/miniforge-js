@@ -8,7 +8,7 @@
 ![npm](https://img.shields.io/npm/dw/miniforge-js)
 ![npm](https://img.shields.io/npm/dm/miniforge-js)
 
-[![paypal](https://img.shields.io/badge/buy%20me%20a%20coffee-paypal-blue)](https://buymeacoffee.aspiesoft.com/)
+[![paypal](https://img.shields.io/badge/buy%20me%20a%20coffee-paypal-blue)](https://buymeacoffee.aspiesoft.com/from-npm/miniforge-js)
 
 Minify and Forge your node.js files for production.
 
