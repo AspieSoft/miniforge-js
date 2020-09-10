@@ -1,4 +1,4 @@
-## MiniforgeJS
+# MiniforgeJS
 
 ![npm](https://img.shields.io/npm/v/miniforge-js)
 ![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/npm/miniforge-js)
@@ -12,9 +12,11 @@
 
 Minify and Forge your node.js files for production.
 
- - Tracks down local required files, and adds them to the parent file as a self running function.
+- Tracks down local required files, and adds them to the parent file as a self running function.
 
- - Minifies each file individually, and then as a whole.
+- Minifies each file individually, and then as a whole.
+
+- Allows your file to run standalone, and not depend on miniforge-js to run.
 
 Optional:
 
@@ -27,10 +29,11 @@ This is generating a virtual file, so no file writes are needed at runtime.
 
 This module runs a minified version of itself, minified using miniforge-js. (self minified)
 
-### What's New
+## What's New
 
 - Added zlib compression
 - Top level comments now stay with compressed file
+- Added option to avoid dependencies on file compression
 
 ## Installation
 
@@ -88,10 +91,11 @@ miniforge.build('./app.js', {minify: {/* terser minify options */}});
 ```js
 // with defaults (the first string ('./app.js') has no default and is required)
 miniforge.build('./app.js', {
-    encrypt: false,
+    encrypt: false, /* encrypt the files code */
     compress: true, /* true for default (currently zlib) || 'lzutf8' for old lzutf8 method || false to disable */
-    standAlone: true,
-    minify: {},
+    standAlone: true, /* allow the file to run without miniforge-js as a dependency */
+    avoidDependencies: true, /* avoid requiring external dependencies for compressed files */
+    minify: {}, /* set minify options for the terser module */
     outputNameMin: false, /* will write output to "filename.min.js" instead of "filename.build.js" (will also use min.keys instead of build.keys) */
     output: undefined, /* (type: string) optional path to an output file to use instead of the default path */
     root: undefined, /* (type: string) set the root dir for build (can replace miniforge.rootDir(__dirname); for build, but its still required for miniforge('./app.js'); function to run) */
@@ -109,10 +113,4 @@ miniforge-js -h
 
 **Note: if encrypt or compress are used, and standAlone is false, you will need to use miniforge('./app.js'); method to require the file.**
 
-Even if standAlone:
-
-- If compress is used, lzutf8 module is required.
-- If encrypt is used, crypto-js module is required.
-- If either are used, require-from-string module is required.
-
-If standAlone, the file will warn the user what modules are needed to run it, if not installed when the file is required.
+If standAlone, the file (when ran/imported) will warn the user what modules (if not installed) are needed to run it.

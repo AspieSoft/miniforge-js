@@ -1,6 +1,6 @@
 {
   "name": "@aspiesoft/miniforge-js",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Minify and Forge your node.js files for production.",
   "license": "MIT",
   "author": "AspieSoft",
@@ -28,8 +28,7 @@
     "crypto-js": "^4.0.0",
     "lzutf8": "^0.5.6",
     "require-from-string": "^2.0.2",
-    "terser": "^4.8.0",
-    "zlib": "^1.0.5"
+    "terser": "^4.8.0"
   },
   "devDependencies": {
     "safe-regex": "^2.1.1"

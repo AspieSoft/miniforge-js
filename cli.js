@@ -6,12 +6,12 @@ const miniforge = require('./index');
 
 function normalizeJson(str){return str.replace(/"?([\w_\- ]+)"?\s*?:\s*?"?(.*?)"?\s*?([,}\]])/gsi, (str, index, item, end) => '"'+index.replace(/"/gsi, '').trim()+'":"'+item.replace(/"/gsi, '').trim()+'"'+end).replace(/,\s*?([}\]])/gsi, '$1');}
 
-if(args[0] === '-h'){
+if(args[0] === '?' || args[0] === '-h' || args[0] === 'h' || args[0] === 'help'){
 
 	console.log('\x1b[34m----------');
 
 	console.log('\x1b[32mminiforge-js -h', '\x1b[34mShow this list', '\x1b[0m');
-	console.log('\x1b[32mminiforge-js build file/path.js \x1b[35m(optional)\x1b[32m{Build options In JSON Format}', '\x1b[34mBuid a minified file', '\x1b[0m');
+	console.log('\x1b[32mminiforge-js build file/path.js \x1b[35m(optional) \x1b[32m{Build options In JSON Format}', '\x1b[34mBuid a minified file', '\x1b[0m');
 
 	console.log('\x1b[32mminiforge-js build file/path.js \x1b[33m--flags', '\x1b[34mInstead of a json object, you can set flags in any order', '\x1b[0m');
 	console.log('\x1b[33m--opts={JSON Object}', '\x1b[34mSame as Adding Options To End', '\x1b[0m');
@@ -27,9 +27,10 @@ if(args[0] === '-h'){
 	console.log('\x1b[33m--encrypt=false', '\x1b[34mSets encrypt option to false', '\x1b[0m');
 	console.log('\x1b[33m--standAlone', '\x1b[34mSets standAlone option to true', '\x1b[0m');
 	console.log('\x1b[33m--standAlone=false', '\x1b[34mSets standAlone option to false', '\x1b[0m');
+	console.log('\x1b[33m--avoidDep', '\x1b[34mAvoid external module dependencies if possible', '\x1b[0m');
 
 	console.log('\x1b[32mminiforge-js root dir/path', '\x1b[34mSet miniforge.rootDir()', '\x1b[0m');
-	console.log('\x1b[32mminiforge-js run file/path.js \x1b[35m(optional)\x1b[32mtrue|false', '\x1b[34mRun a file with miniforge(file/path.js, true|false);', '\x1b[0m');
+	console.log('\x1b[32mminiforge-js run file/path.js \x1b[35m(optional) \x1b[32mtrue|false', '\x1b[34mRun a file with miniforge(file/path.js, true|false);', '\x1b[0m');
 
 	console.log('\x1b[34m----------\x1b[0m');
 
@@ -72,6 +73,10 @@ if(args[0] === '-h'){
 					opts.encrypt = true;
 				}else if(args[i] === '--standAlone=false'){
 					opts.encrypt = false;
+				}else if(args[i] === '--avoidDependencies' || args[i] === '--avoidDependencies=true' || args[i] === '--avoidDep' || args[i] === '--avoidDep=true'){
+					opts.avoidDependencies = true;
+				}else if(args[i] === '--avoidDependencies=false' || args[i] === '--avoidDep=false'){
+					opts.avoidDependencies = false;
 				}
 			}
 		}if(!opts.root){opts.root = process.cwd();}

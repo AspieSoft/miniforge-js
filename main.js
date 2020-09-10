@@ -103,7 +103,11 @@ function getKeyPair(key){
 }
 
 
-const defaultBuildOptions = {compress: true, standAlone: true};
+const defaultBuildOptions = {
+	compress: true,
+	standAlone: true,
+	avoidDependencies: true,
+};
 function build(file, options = {}){
 	if(!options.root || typeof options.root !== 'string'){options.root = undefined;}
 	if(options.root){
@@ -183,7 +187,9 @@ function build(file, options = {}){
 	if(opts.standAlone && (opts.encrypt || opts.compress)){
 		const fileDecrypt = [];
 		const fileDecompress = [];
+
 		if(opts.encrypt){
+			console.log('Added External Dependency: crypto-js');
 			fileDecrypt.push(`
 				const crypto = requireModule('crypto', 'decrypt');
 				const CryptoJS = requireModule('crypto-js', 'decrypt');
@@ -210,7 +216,9 @@ function build(file, options = {}){
 				if(!fileData){console.error(file, 'failed to decrypt');return undefined;}
 			`);
 		}
+
 		if(opts.compress === 'lzutf8'){
+			console.log('Added External Dependency: lzutf8');
 			fileDecompress.push(`
 				const LZUTF8 = requireModule('lzutf8', 'decompress');
 				if(!LZUTF8){module.exports = undefined; return;}
@@ -248,24 +256,78 @@ function build(file, options = {}){
 				if(!fileData){console.error(file, 'failed to decompress');return undefined;}
 			`);
 		}
-		fileData = `
-			;(function(){
-				const fs = requireOr(['fs-extra', 'fs']);
-				${fileDecrypt[0]}
-				${fileDecompress[0]}
-				const requireFromString = requireModule('require-from-string', 'run');
-				if(!requireFromString){module.exports = undefined; return;}
-				function requireOr(files){let result = undefined;for(let i = 0; i < files.length; i++){try{result = require(files[i]);break;}catch(e){}}return result;}
-				function requireModule(file, action){try{return require(file);}catch(e){console.error(__dirname, 'requires the', file, 'module to be installed so it can', action, 'itself');}}
-				let fileData = '${fileData.replace(/(?!\\)'/g, '\\\'')}';
-				let file = __filename;
-				${fileDecrypt[1]}
-				${fileDecompress[1]}
-				${fileDecrypt[2]}
-				${fileDecompress[2]}
-				module.exports = requireFromString(fileData, file);
-			})();
-		`;
+
+		if(opts.avoidDependencies){
+			fileData = `
+			/*! Compressed with @aspiesoft/miniforge-js module */
+			/*! @aspiesoft/miniforge-js v1.0.0 | (c) aspiesoftweb@gmail.com */
+				;(function(){
+					const fs = requireOr(['fs-extra', 'fs']);
+					${fileDecrypt[0]}
+					${fileDecompress[0]}
+
+					function requireOr(files){let result = undefined;for(let i = 0; i < files.length; i++){try{result = require(files[i]);break;}catch(e){}}return result;}
+					function requireModule(file, action){try{return require(file);}catch(e){console.error(__dirname, 'requires the', file, 'module to be installed so it can', action, 'itself');}}
+					let fileData = '${fileData.replace(/(?!\\)'/g, '\\\'')}';
+					let file = __filename;
+					${fileDecrypt[1]}
+					${fileDecompress[1]}
+					${fileDecrypt[2]}
+					${fileDecompress[2]}
+
+					/*! Runs with require-from-string module */
+					/*! require-from-string v2.0.2 | (c) Vsevolod Strukchinsky <floatdrop@gmail.com> (github.com/floatdrop) */
+					const requireFromString = (function(){
+						const Module = require('module');
+						const path = require('path');
+						return function(code, filename, opts){
+							if(typeof filename === 'object'){
+								opts = filename;
+								filename = undefined;
+							}
+							opts = opts || {};
+							filename = filename || '';
+							opts.appendPaths = opts.appendPaths || [];
+							opts.prependPaths = opts.prependPaths || [];
+							if (typeof code !== 'string') {
+								throw new Error('code must be a string, not ' + typeof code);
+							}
+							var paths = Module._nodeModulePaths(path.dirname(filename));
+							var parent = module.parent;
+							var m = new Module(filename, parent);
+							m.filename = filename;
+							m.paths = [].concat(opts.prependPaths).concat(paths).concat(opts.appendPaths);
+							m._compile(code, filename);
+							var exports = m.exports;
+							parent && parent.children && parent.children.splice(parent.children.indexOf(m), 1);
+							return exports;
+						};
+					})();
+					module.exports = requireFromString(fileData, file);
+				})();
+			`;
+		}else{
+			console.log('Added External Dependency: require-from-string');
+			fileData = `
+				;(function(){
+					const fs = requireOr(['fs-extra', 'fs']);
+					${fileDecrypt[0]}
+					${fileDecompress[0]}
+					const requireFromString = requireModule('require-from-string', 'run');
+					if(!requireFromString){module.exports = undefined; return;}
+					function requireOr(files){let result = undefined;for(let i = 0; i < files.length; i++){try{result = require(files[i]);break;}catch(e){}}return result;}
+					function requireModule(file, action){try{return require(file);}catch(e){console.error(__dirname, 'requires the', file, 'module to be installed so it can', action, 'itself');}}
+					let fileData = '${fileData.replace(/(?!\\)'/g, '\\\'')}';
+					let file = __filename;
+					${fileDecrypt[1]}
+					${fileDecompress[1]}
+					${fileDecrypt[2]}
+					${fileDecompress[2]}
+					module.exports = requireFromString(fileData, file);
+				})();
+			`;
+		}
+
 		fileData = minifyFile(fileData, opts.minify);
 	}
 
@@ -289,7 +351,11 @@ function build(file, options = {}){
 	}
 	
 	if(firstStr !== ''){
-		fileData = firstStr+fileData+'\r\n';
+		fileData = firstStr+fileData;
+	}
+
+	if(fileData.includes('\n')){
+		fileData = fileData.trim()+'\r\n';
 	}
 
 	fs.writeFileSync(fileOutput, fileData);
