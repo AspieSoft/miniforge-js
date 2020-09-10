@@ -8,7 +8,7 @@
 ![npm](https://img.shields.io/npm/dw/miniforge-js)
 ![npm](https://img.shields.io/npm/dm/miniforge-js)
 
-[![paypal](https://img.shields.io/badge/buy%20me%20a%20coffee-paypal-blue)](https://buymeacoffee.aspiesoft.com/)
+[![paypal](https://img.shields.io/badge/buy%20me%20a%20coffee-paypal-blue)](https://buymeacoffee.aspiesoft.com)
 
 Minify and Forge your node.js files for production.
 
@@ -17,8 +17,9 @@ Minify and Forge your node.js files for production.
  - Minifies each file individually, and then as a whole.
 
 Optional:
- - Compresses the file, and decompress it at runtime
- - Encrypts the file, and decrypts it at runtime
+
+- Compresses the file, and decompress it at runtime
+- Encrypts the file, and decrypts it at runtime
 
 This module Never uses eval.
 Instead, the file is pushed into the nodejs module object, as a way to run the file as a string after decompression.
@@ -28,8 +29,8 @@ This module runs a minified version of itself, minified using miniforge-js. (sel
 
 ### What's New
 
- - Added CLI Commands
- - Duplicate Forged Files are filtered and added to the top level
+- Added zlib compression
+- Top level comments now stay with compressed file
 
 ## Installation
 
@@ -38,6 +39,9 @@ npm install @aspiesoft/miniforge-js
 
 # or install as a dev dependency
 npm install @aspiesoft/miniforge-js -D
+
+# or install global for cli
+npm install @aspiesoft/miniforge-js -g
 ```
 
 ## Setup
@@ -85,7 +89,7 @@ miniforge.build('./app.js', {minify: {/* terser minify options */}});
 // with defaults (the first string ('./app.js') has no default and is required)
 miniforge.build('./app.js', {
     encrypt: false,
-    compress: true,
+    compress: true, /* true for default (currently zlib) || 'lzutf8' for old lzutf8 method || false to disable */
     standAlone: true,
     minify: {},
     outputNameMin: false, /* will write output to "filename.min.js" instead of "filename.build.js" (will also use min.keys instead of build.keys) */
@@ -99,15 +103,16 @@ miniforge.build('./app.js', {
 You can use cli scripts as shown
 
 ```shell script
-#for a list of commands
+# for a list of commands
 miniforge-js -h
 ```
 
 **Note: if encrypt or compress are used, and standAlone is false, you will need to use miniforge('./app.js'); method to require the file.**
 
 Even if standAlone:
- - If compress is used, lzutf8 module is required.
- - If encrypt is used, crypto-js module is required.
- - If either are used, require-from-string module is required.
+
+- If compress is used, lzutf8 module is required.
+- If encrypt is used, crypto-js module is required.
+- If either are used, require-from-string module is required.
 
 If standAlone, the file will warn the user what modules are needed to run it, if not installed when the file is required.
