@@ -2,7 +2,7 @@
 
 const [,,...args] = process.argv;
 
-const miniforge = require('./src/index.min');
+const miniforge = require('./index');
 
 function normalizeJson(str){return str.replace(/"?([\w_\- ]+)"?\s*?:\s*?"?(.*?)"?\s*?([,}\]])/gsi, (str, index, item, end) => '"'+index.replace(/"/gsi, '').trim()+'":"'+item.replace(/"/gsi, '').trim()+'"'+end).replace(/,\s*?([}\]])/gsi, '$1');}
 
@@ -21,6 +21,7 @@ if(args[0] === '-h'){
 	console.log('\x1b[33m--min', '\x1b[34mSets outputNameMin option to true', '\x1b[0m');
 	console.log('\x1b[33m--build', '\x1b[34mSets outputNameMin option to false', '\x1b[0m');
 	console.log('\x1b[33m--compress', '\x1b[34mSets compress option to true', '\x1b[0m');
+	console.log('\x1b[33m--compress=lzutf8', '\x1b[34mSets compress option to use old lzutf8 method', '\x1b[0m');
 	console.log('\x1b[33m--compress=false', '\x1b[34mSets compress option to false', '\x1b[0m');
 	console.log('\x1b[33m--encrypt', '\x1b[34mSets encrypt option to true', '\x1b[0m');
 	console.log('\x1b[33m--encrypt=false', '\x1b[34mSets encrypt option to false', '\x1b[0m');
@@ -28,7 +29,7 @@ if(args[0] === '-h'){
 	console.log('\x1b[33m--standAlone=false', '\x1b[34mSets standAlone option to false', '\x1b[0m');
 
 	console.log('\x1b[32mminiforge-js root dir/path', '\x1b[34mSet miniforge.rootDir()', '\x1b[0m');
-	console.log('\x1b[32mminiforge-js run file/path.js \x1b[35m(optional)\x1b[32mtrue|false', '\x1b[34mRun a file with miniforge(file/path.js, true||false);', '\x1b[0m');
+	console.log('\x1b[32mminiforge-js run file/path.js \x1b[35m(optional)\x1b[32mtrue|false', '\x1b[34mRun a file with miniforge(file/path.js, true|false);', '\x1b[0m');
 
 	console.log('\x1b[34m----------\x1b[0m');
 
@@ -57,6 +58,8 @@ if(args[0] === '-h'){
 					opts.outputNameMin = true;
 				}else if(args[i] === '--build'){
 					opts.outputNameMin = false;
+				}else if(args[i] === '--compress=lzutf8' || args[i] === '--compress="lzutf8"'){
+					opts.compress = 'lzutf8';
 				}else if(args[i] === '--compress' || args[i] === '--compress=true'){
 					opts.compress = true;
 				}else if(args[i] === '--compress=false'){
