@@ -11,14 +11,31 @@ const requireFromString = require('require-from-string');
 
 let rootDirname = undefined;
 
-const minifyOptions = {ecma: 2020, parse: {ecma: 2020}, compress: {ecma: 2020, keep_infinity: true, module: true, passes: 5, top_retain: ['module', 'global', 'return', 'process'], typeofs: false}, mangle: {keep_classnames: true, module: true, reserved: ['module', 'global', 'return', 'process']}, module: true, keep_classnames: true};
-function minifyFile(file, options = {}){
+const minifyOptions = {
+	ecma: 2020,
+	keep_classnames: true,
+	parse: {shebang: true},
+	compress: {
+		ecma: 2020,
+		keep_infinity: true,
+		passes: 5,
+		top_retain: ['module', 'global', 'return', 'process'],
+		typeofs: false,
+	},
+	mangle: {
+		keep_classnames: true,
+		reserved: ['module', 'global', 'return', 'process'],
+	},
+};
+
+async function minifyFile(file, options = {}){
 	let opts = {...minifyOptions};
 	Object.assign(opts, options);
-	let result = minify(file, opts);
+	let result = await minify(file, opts);
 	if(result && !result.error && result.code){
 		return result.code;
-	}return file;
+	}
+	return file;
 }
 
 function zlibCompress(str){
@@ -103,12 +120,44 @@ function getKeyPair(key){
 }
 
 
+function replaceAsync(str, re, callback){
+	// http://es5.github.io/#x15.5.4.11
+	str = String(str);
+	var parts = [],
+			i = 0;
+	if (Object.prototype.toString.call(re) == "[object RegExp]") {
+			if (re.global)
+					re.lastIndex = i;
+			var m;
+			while (m = re.exec(str)) {
+					var args = m.concat([m.index, m.input]);
+					parts.push(str.slice(i, m.index), callback.apply(null, args));
+					i = re.lastIndex;
+					if (!re.global)
+							break; // for non-global regexes only take the first match
+					if (m[0].length == 0)
+							re.lastIndex++;
+			}
+	} else {
+			re = String(re);
+			i = str.indexOf(re);
+			parts.push(str.slice(0, i), callback.apply(null, [re, i, str]));
+			i += re.length;
+	}
+	parts.push(str.slice(i));
+	return Promise.all(parts).then(function(strings) {
+			return strings.join("");
+	});
+}
+
+
 const defaultBuildOptions = {
 	compress: true,
 	standAlone: true,
 	avoidDependencies: true,
 };
-function build(file, options = {}){
+
+async function build(file, options = {}){
 	if(!options.root || typeof options.root !== 'string'){options.root = undefined;}
 	if(options.root){
 		options.root = path.resolve(options.root.toString()) || undefined;
@@ -142,10 +191,12 @@ function build(file, options = {}){
 		return '';
 	});
 
-	fileData = getRequiredFiles(fileData, opts, path.join(file, '..'), true).result;
-	fileData = fileData.replace(/\/\*@min\*\/`(.*?)`/gs, function(str, code){return '`'+minifyFile(code, opts.minify)+'`';});
-	fileData = minifyFile(fileData, opts.minify);
-	
+	fileData = (await getRequiredFiles(fileData, opts, path.join(file, '..'), true)).result;
+	fileData = await replaceAsync(fileData, /\/\*@min\*\/`(.*?)`/gs, async function(str, code){
+		return '`'+(await minifyFile(code, opts.minify))+'`';
+	});
+	fileData = await minifyFile(fileData, opts.minify);
+
 	if(opts.compress === 'lzutf8'){ // lzutf8 compress
 		let compressedFile = lzutf8Compress(fileData);
 		if(compressedFile && opts.standAlone){
@@ -259,8 +310,7 @@ function build(file, options = {}){
 
 		if(opts.avoidDependencies){
 			fileData = `
-			/*! Compressed with @aspiesoft/miniforge-js module */
-			/*! @aspiesoft/miniforge-js v1.0.0 | (c) aspiesoftweb@gmail.com */
+			/*! Compressed with: @aspiesoft/miniforge-js v1.0.0 | (c) aspiesoftweb@gmail.com */
 				;(function(){
 					const fs = requireOr(['fs-extra', 'fs']);
 					${fileDecrypt[0]}
@@ -275,8 +325,7 @@ function build(file, options = {}){
 					${fileDecrypt[2]}
 					${fileDecompress[2]}
 
-					/*! Runs with require-from-string module */
-					/*! require-from-string v2.0.2 | (c) Vsevolod Strukchinsky <floatdrop@gmail.com> (github.com/floatdrop) */
+					/*! Runs with: require-from-string v2.0.2 | (c) Vsevolod Strukchinsky <floatdrop@gmail.com> (github.com/floatdrop) */
 					const requireFromString = (function(){
 						const Module = require('module');
 						const path = require('path');
@@ -328,7 +377,7 @@ function build(file, options = {}){
 			`;
 		}
 
-		fileData = minifyFile(fileData, opts.minify);
+		fileData = await minifyFile(fileData, opts.minify);
 	}
 
 	let fileOutput;
@@ -393,11 +442,11 @@ function runFile(file, optional){
 }
 
 
-function getRequiredFiles(file, options = {}, dirname, isRoot = false, functionFiles = {}){
+async function getRequiredFiles(file, options = {}, dirname, isRoot = false, functionFiles = {}){
 	if(!options.root || typeof options.root !== 'string'){options.root = rootDirname;}
 	if(typeof functionFiles !== 'object'){functionFiles = {};}
 
-	file = file.replace(/(?:([\w_$.\[\]]+)[\s\n]*?=[\s\n]*?|)require\([\s\n]*?('\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, function(str, varName, file){
+	file = await replaceAsync(file, /(?:([\w_$.\[\]]+)[\s\n]*?=[\s\n]*?|)require\([\s\n]*?('\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s"]|\\')+'|"\.{1,2}[/\\](?:[\w_\-$./\\?!%*:|<>@#^&()\[\]`~\s']|\\")+")[\s\n]*?\);/gs, async function(str, varName, file){
 		if(!file){return str;}
 		file = file.toString().substring(1, file.length-1);
 
@@ -431,15 +480,16 @@ function getRequiredFiles(file, options = {}, dirname, isRoot = false, functionF
 		}catch(e){return fallbackResult;}
 		if(!fileData || fileData === ''){return fallbackResult;}
 
-		fileData = getRequiredFiles(fileData, options, path.join(file, '..'), false, functionFiles);
+		fileData = await getRequiredFiles(fileData, options, path.join(file, '..'), false, functionFiles);
+
 		Object.apply(functionFiles, fileData.functionFiles);
 		fileData = fileData.result;
 
 		const exportsToken = crypto.randomBytes(8).toString('hex').replace(/[^\w_]/g, '');
 
 		fileData = fileData.replace(/module[\s\n]*?\.[\s\n]*?exports[\s\n]*?([\w_$.\s\n]*)=/gs, '$_'+exportsToken+'_module_exports$1=');
-		fileData = fileData.replace(/\/\*@min\*\/`(.*?)`/gs, function(str, code){return minifyFile(code, options.minify);});
-		fileData = minifyFile(fileData, options.minify);
+		fileData = await fileData.replace(/\/\*@min\*\/`(.*?)`/gs, async function(str, code){return await minifyFile(code, options.minify);});
+		fileData = await minifyFile(fileData, options.minify);
 
 		let result = `(function(){let $_${exportsToken}_module_exports=undefined;${fileData}return $_${exportsToken}_module_exports;})();`;
 		let newVarName = undefined;
@@ -461,7 +511,8 @@ function getRequiredFiles(file, options = {}, dirname, isRoot = false, functionF
 			let func = functionFiles[functionFileNames[i]];
 			if(func.varName){resultFunctions.push('const '+func.varName+'='+func.result);}
 			else{resultFunctions.push(';'+func.result);}
-		}file = resultFunctions.join('\n')+file;
+		}
+		file = resultFunctions.join('\n')+file;
 	}
 
 	return {result: file, functionFiles};

@@ -1,9 +1,13 @@
 {
   "name": "@aspiesoft/miniforge-js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Minify and Forge your node.js files for production.",
   "license": "MIT",
   "author": "AspieSoft",
+  "scripts": {
+    "test": "node app.js",
+    "build": "node build.js"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/aspiesoft/miniforge-js.git"
@@ -28,7 +32,7 @@
     "crypto-js": "^4.0.0",
     "lzutf8": "^0.5.6",
     "require-from-string": "^2.0.2",
-    "terser": "^4.8.0"
+    "terser": "^5.3.4"
   },
   "devDependencies": {
     "safe-regex": "^2.1.1"
